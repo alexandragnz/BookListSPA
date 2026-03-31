@@ -1,11 +1,871 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=bvc, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookList – Editorial Nova</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c27;
+      --border: #2a2a3d;
+      --accent: #5cff3cd0;
+      --accent2: #7c3aed;
+      --accent3: #06d6a0;
+      --text: #f0f0f5;
+      --muted: #6b6b8a;
+      --card-hover: #1e1e2e;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand {
+      font-family: var(--font-display);
+      font-size: 1.9rem;
+      letter-spacing: 3px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand span { color: var(--accent); }
+    .nav-links { display: flex; gap: 0.25rem; align-items: center; }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 0.4rem 0.9rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .nav-links a:hover, .nav-links a.router-link-active {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--surface);
+    }
+    .nav-links a.router-link-exact-active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .nav-count {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 99px;
+      margin-left: 0.5rem;
+    }
+
+    /* ── VIEWS ── */
+    #app { min-height: 100vh; }
+    .view { min-height: calc(100vh - 60px); padding: 3rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    /* ── HOME VIEW ── */
+    .home-hero {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+      align-items: center; min-height: 70vh;
+    }
+    .hero-text h1 {
+      font-family: var(--font-display);
+      font-size: clamp(3.5rem, 7vw, 6rem);
+      line-height: 0.95;
+      letter-spacing: 4px;
+      margin-bottom: 1.5rem;
+    }
+    .hero-text h1 em { color: var(--accent); font-style: normal; display: block; }
+    .hero-text p {
+      color: var(--muted); font-size: 1.05rem; line-height: 1.7;
+      margin-bottom: 2rem; max-width: 420px;
+    }
+    .hero-cta {
+      display: inline-flex; gap: 1rem; flex-wrap: wrap;
+    }
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 0.75rem 1.75rem;
+      border-radius: 4px;
+      border: none; cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #ff1a42; transform: translateY(-2px); }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .hero-visual {
+      position: relative; display: flex; justify-content: center;
+    }
+    .book-stack {
+      position: relative; width: 260px; height: 320px;
+    }
+    .book-card-deco {
+      position: absolute;
+      width: 180px; height: 240px;
+      border-radius: 8px;
+      display: flex; align-items: flex-end;
+      padding: 1rem;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      transition: transform 0.3s;
+    }
+    .book-card-deco:nth-child(1) { background: var(--accent2); left: 60px; top: 20px; transform: rotate(8deg); }
+    .book-card-deco:nth-child(2) { background: var(--accent3); color: #0a0a0f; left: 20px; top: 40px; transform: rotate(-4deg); }
+    .book-card-deco:nth-child(3) { background: var(--accent); left: 80px; top: 60px; transform: rotate(2deg); }
+    .book-stack:hover .book-card-deco:nth-child(1) { transform: rotate(12deg) translateX(10px); }
+    .book-stack:hover .book-card-deco:nth-child(2) { transform: rotate(-7deg) translateX(-10px); }
+
+    .stats-row {
+      display: flex; gap: 2rem; margin-top: 3rem;
+      border-top: 1px solid var(--border); padding-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .stat { flex: 1; min-width: 120px; }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; }
+
+    /* counter demo for lesson 1 */
+    .counter-demo {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-top: 3rem;
+      display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+    }
+    .counter-demo h3 { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.75rem; }
+    .counter-btns { display: flex; align-items: center; gap: 1rem; }
+    .counter-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .counter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .counter-val { font-family: var(--font-display); font-size: 2.5rem; color: var(--accent); min-width: 40px; text-align: center; }
+    .user-greeting { font-size: 0.95rem; color: var(--muted); }
+    .user-greeting strong { color: var(--text); }
+
+    /* ── LISTA VIEW ── */
+    .view-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .view-title {
+      font-family: var(--font-display);
+      font-size: 3.5rem; letter-spacing: 4px;
+    }
+    .view-title span { color: var(--accent); }
+
+    /* form */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .form-card h3 {
+      font-family: var(--font-mono); font-size: 0.75rem;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 2px;
+      margin-bottom: 1.25rem;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group.full { grid-column: 1/-1; }
+    label {
+      font-size: 0.75rem; font-family: var(--font-mono);
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    }
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 0.65rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+    textarea { resize: vertical; min-height: 80px; }
+    select option { background: var(--surface2); }
+    .form-actions { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+    .preview-inline {
+      font-size: 0.82rem; color: var(--muted);
+      font-family: var(--font-mono);
+      background: var(--surface2);
+      padding: 0.5rem 0.9rem; border-radius: 6px;
+      border: 1px solid var(--border);
+      flex: 1;
+    }
+    .preview-inline span { color: var(--accent3); }
+
+    /* filter bar */
+    .filter-bar {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+    .filter-chip {
+      font-family: var(--font-mono); font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 0.35rem 0.9rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+    .filter-chip.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+    /* books grid */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .book-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .book-item::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .book-item:hover { border-color: var(--border); background: var(--card-hover); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+    .book-item:hover::before { transform: scaleX(1); }
+    .book-item-cover {
+      width: 100%; height: 140px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 3rem;
+      position: relative; overflow: hidden;
+    }
+    .book-item-cover img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 6px;
+    }
+    .book-item-cover .fallback {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+      font-size: 2.5rem;
+    }
+    .book-cat {
+      font-family: var(--font-mono); font-size: 0.65rem;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--accent3);
+      margin-bottom: 0.4rem;
+    }
+    .book-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.3; }
+    .book-author { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem; }
+    .book-meta { display: flex; align-items: center; justify-content: space-between; }
+    .book-meta-info { font-size: 0.7rem; color: var(--muted); font-family: var(--font-mono); }
+    .btn-delete {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.75rem;
+      padding: 0.3rem 0.7rem; border-radius: 4px;
+      cursor: pointer; transition: all 0.15s;
+      font-family: var(--font-mono);
+    }
+    .btn-delete:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,60,95,0.08); }
+
+    .empty-state {
+      text-align: center; padding: 5rem 2rem;
+      color: var(--muted);
+    }
+    .empty-state .big { font-size: 4rem; margin-bottom: 1rem; }
+    .empty-state p { font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* api search */
+    .api-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .api-section h3 {
+      font-family: var(--font-mono); font-size: 0.75rem;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 2px;
+      margin-bottom: 1rem;
+    }
+    .search-row { display: flex; gap: 0.75rem; }
+    .api-results {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem; margin-top: 1.25rem;
+    }
+    .api-book {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.9rem;
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .api-book-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; }
+    .api-book-author { font-size: 0.75rem; color: var(--muted); }
+    .btn-import {
+      margin-top: 0.5rem;
+      font-family: var(--font-mono); font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 1px;
+      background: transparent; border: 1px solid var(--accent3);
+      color: var(--accent3); padding: 0.3rem 0.6rem; border-radius: 4px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-import:hover { background: var(--accent3); color: #0a0a0f; }
+    .api-loading { color: var(--muted); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 1rem; }
+
+    /* ── DETALLE VIEW ── */
+    .back-btn {
+      font-family: var(--font-mono); font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); background: transparent; border: none;
+      cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 2rem; padding: 0;
+      text-decoration: none;
+    }
+    .back-btn:hover { color: var(--text); }
+    .detail-grid { display: grid; grid-template-columns: 300px 1fr; gap: 3rem; align-items: start; }
+    .detail-cover {
+      width: 100%; aspect-ratio: 2/3;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5rem;
+    }
+    .detail-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-badge {
+      display: inline-block;
+      font-family: var(--font-mono); font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 2px;
+      padding: 0.35rem 0.9rem; border-radius: 99px;
+      background: rgba(6,214,160,0.15); border: 1px solid var(--accent3);
+      color: var(--accent3); margin-bottom: 1rem;
+    }
+    .detail-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      letter-spacing: 3px; line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .detail-author { font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .detail-desc {
+      font-size: 0.95rem; color: var(--muted); line-height: 1.8;
+      margin-bottom: 2rem;
+      border-left: 2px solid var(--accent2);
+      padding-left: 1rem;
+    }
+    .detail-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .detail-meta-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem;
+    }
+    .detail-meta-item .key { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; margin-bottom: 0.3rem; }
+    .detail-meta-item .val { font-size: 0.95rem; font-weight: 600; }
+
+    .tag { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 0.2rem 0.6rem; border-radius: 4px; margin: 0.2rem; }
+
+    /* transitions */
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.2s, transform 0.2s; }
+    .fade-enter-from { opacity: 0; transform: translateY(8px); }
+    .fade-leave-to { opacity: 0; transform: translateY(-8px); }
+    .list-enter-active { animation: popIn 0.3s ease; }
+    .list-leave-active { animation: popOut 0.2s ease; }
+    @keyframes popIn { from { opacity:0; transform: scale(0.9) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+    @keyframes popOut { from { opacity:1; } to { opacity:0; transform: scale(0.95); } }
+
+    /* noise overlay */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.4; z-index: 9999;
+    }
+
+    /* responsive */
+    @media (max-width: 768px) {
+      .home-hero { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    
+<div id="app">
+  <!-- NAV -->
+  <nav>
+    <router-link to="/" class="nav-brand">BOOK<span>LIST</span></router-link>
+    <div class="nav-links">
+      <router-link to="/">Inicio</router-link>
+      <router-link to="/libros">
+        Biblioteca
+        <span class="nav-count">{{ libros.length }}</span>
+      </router-link>
+    </div>
+  </nav>
+
+  <!-- ROUTER VIEW con transición -->
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" :libros="libros" :usuario="usuario"
+        :contador="contador"
+        @agregar="agregarLibro"
+        @eliminar="eliminarLibro"
+        @incrementar="contador++"
+        @decrementar="contador > 0 && contador--"
+      />
+    </transition>
+  </router-view>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CATEGORÍAS Y EMOJIS
+// ══════════════════════════════════════════
+const CATEGORIAS = ['Fantasía', 'Ciencia Ficción', 'Romance', 'Terror', 'Historia', 'Aventura', 'Filosofía', 'Autoayuda', 'Manga', 'Misterio'];
+const CAT_COLORS = {
+  'Fantasía': '#7c3aed', 'Ciencia Ficción': '#06d6a0', 'Romance': '#ff6b9d',
+  'Terror': '#ff3c5f', 'Historia': '#f59e0b', 'Aventura': '#3b82f6',
+  'Filosofía': '#8b5cf6', 'Autoayuda': '#10b981', 'Manga': '#ec4899', 'Misterio': '#6366f1'
+};
+const CAT_EMOJI = {
+  'Fantasía':'🧙','Ciencia Ficción':'🚀','Romance':'💕','Terror':'👻','Historia':'📜',
+  'Aventura':'⚔️','Filosofía':'🧠','Autoayuda':'✨','Manga':'🎌','Misterio':'🔍'
+};
+
+// VISTA: INICIO
+const InicioView = {
+  name: 'InicioView',
+  props: ['libros', 'usuario', 'contador'],
+  emits: ['incrementar', 'decrementar'],
+  template: `
+    <div class="view">
+      <div class="home-hero">
+        <div class="hero-text">
+          <h1>TU PRÓXIMA<em>LECTURA</em>TE ESPERA</h1>
+          <p>Gestiona tu colección personal, descubre nuevos títulos y lleva tu biblioteca al siguiente nivel.</p>
+          <div class="hero-cta">
+            <router-link to="/libros" class="btn btn-primary">▶ Ver Biblioteca</router-link>
+            <router-link to="/libros" class="btn btn-outline">+ Añadir Libro</router-link>
+          </div>
+          <div class="stats-row">
+            <div class="stat">
+              <div class="stat-num">{{ libros.length }}</div>
+              <div class="stat-label">Libros</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num">{{ autoresUnicos }}</div>
+              <div class="stat-label">Autores</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num">{{ categoriasUnicas }}</div>
+              <div class="stat-label">Géneros</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="book-stack">
+            <div class="book-card-deco">FANTASY</div>
+            <div class="book-card-deco">SCI-FI</div>
+            <div class="book-card-deco">MANGA</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LECCIÓN 1: contador reactivo + MVVM -->
+      <div class="counter-demo">
+        <div>
+          <h3>📌 Lección 1 — Contador Reactivo</h3>
+          <div class="user-greeting">Hola, <strong>{{ usuario }}</strong> — tu sesión está activa.</div>
+        </div>
+        <div class="counter-btns">
+          <button class="counter-btn" @click="$emit('decrementar')">−</button>
+          <div class="counter-val">{{ contador }}</div>
+          <button class="counter-btn" @click="$emit('incrementar')">+</button>
+        </div>
+        <div style="color:var(--muted);font-size:0.8rem;font-family:var(--font-mono)">
+          libros leídos esta semana
+        </div>
+      </div>
+    </div>
+  `,
+  computed: {
+    autoresUnicos() { return new Set(this.libros.map(l => l.autor)).size; },
+    categoriasUnicas() { return new Set(this.libros.map(l => l.categoria)).size; }
+  }
+};
+
+// COMPONENTE: LibroCard (reutilizable)
+const LibroCard = {
+  name: 'LibroCard',
+  props: ['libro'],
+  emits: ['eliminar'],
+  template: `
+    <div class="book-item">
+      <div class="book-item-cover" :style="coverStyle">
+        <img v-if="libro.portada" :src="libro.portada" :alt="libro.titulo" @error="imgError = true" v-show="!imgError"/>
+        <div class="fallback" v-show="!libro.portada || imgError">{{ emoji }}</div>
+      </div>
+      <div class="book-cat">{{ libro.categoria }}</div>
+      <div class="book-title">{{ libro.titulo }}</div>
+      <div class="book-author">{{ libro.autor }}</div>
+      <div class="book-meta">
+        <div class="book-meta-info">{{ libro.año || '—' }}</div>
+        <div style="display:flex;gap:0.5rem">
+          <router-link :to="'/libros/' + libro.id" class="btn-delete" style="border-color:var(--accent2);color:var(--accent2)">Ver</router-link>
+          <button class="btn-delete" @click.stop="$emit('eliminar', libro.id)">✕</button>
+        </div>
+      </div>
+    </div>
+  `,
+  data() { return { imgError: false }; },
+  computed: {
+    emoji() { return CAT_EMOJI[this.libro.categoria] || '📚'; },
+    coverStyle() {
+      const c = CAT_COLORS[this.libro.categoria] || '#333';
+      return { background: `${c}22`, border: `1px solid ${c}44` };
+    }
+  }
+};
+
+// VISTA: LISTA DE LIBROS
+const ListaLibros = {
+  name: 'ListaLibros',
+  components: { LibroCard },
+  props: ['libros'],
+  emits: ['agregar', 'eliminar'],
+  data() {
+    return {
+      nuevoLibro: { titulo: '', autor: '', categoria: 'Fantasía', descripcion: '', año: '' },
+      filtroActivo: 'Todos',
+      busquedaApi: '',
+      resultadosApi: [],
+      cargandoApi: false,
+      CATEGORIAS,
+    };
+  },
+  computed: {
+    librosFiltrados() {
+      if (this.filtroActivo === 'Todos') return this.libros;
+      return this.libros.filter(l => l.categoria === this.filtroActivo);
+    },
+    previsualizacion() {
+      if (!this.nuevoLibro.titulo) return '—';
+      return `"${this.nuevoLibro.titulo}" · ${this.nuevoLibro.autor || 'Autor'} · ${this.nuevoLibro.categoria}`;
+    },
+    filtrosDisponibles() {
+      const cats = [...new Set(this.libros.map(l => l.categoria))];
+      return ['Todos', ...cats];
+    }
+  },
+  methods: {
+    agregar() {
+      if (!this.nuevoLibro.titulo.trim() || !this.nuevoLibro.autor.trim()) return;
+      this.$emit('agregar', { ...this.nuevoLibro });
+      this.nuevoLibro = { titulo: '', autor: '', categoria: 'Fantasía', descripcion: '', año: '' };
+    },
+    async buscarApi() {
+      if (!this.busquedaApi.trim()) return;
+      this.cargandoApi = true;
+      this.resultadosApi = [];
+      try {
+        const q = encodeURIComponent(this.busquedaApi);
+        const res = await fetch(`https://openlibrary.org/search.json?q=${q}&limit=8&fields=key,title,author_name,first_publish_year,subject,cover_i`);
+        const data = await res.json();
+        this.resultadosApi = data.docs.map(d => ({
+          titulo: d.title,
+          autor: d.author_name?.[0] || 'Desconocido',
+          año: d.first_publish_year || '',
+          portada: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+          categoria: this.mapCategoria(d.subject),
+        }));
+      } catch(e) { console.error(e); }
+      this.cargandoApi = false;
+    },
+    mapCategoria(subjects) {
+      if (!subjects) return 'Aventura';
+      const s = subjects.join(' ').toLowerCase();
+      if (s.includes('fantasy') || s.includes('fantasia')) return 'Fantasía';
+      if (s.includes('science fiction') || s.includes('sci-fi')) return 'Ciencia Ficción';
+      if (s.includes('romance') || s.includes('love')) return 'Romance';
+      if (s.includes('horror') || s.includes('terror')) return 'Terror';
+      if (s.includes('history') || s.includes('historia')) return 'Historia';
+      if (s.includes('mystery') || s.includes('misterio')) return 'Misterio';
+      if (s.includes('manga') || s.includes('manga')) return 'Manga';
+      if (s.includes('philosoph')) return 'Filosofía';
+      if (s.includes('self-help') || s.includes('motivat')) return 'Autoayuda';
+      return 'Aventura';
+    },
+    importar(libro) {
+      this.$emit('agregar', libro);
+    }
+  },
+  template: `
+    <div class="view">
+      <div class="view-header">
+        <h2 class="view-title">MI BIBLIO<span>TECA</span></h2>
+        <span style="font-family:var(--font-mono);font-size:0.8rem;color:var(--muted)">{{ librosFiltrados.length }} títulos</span>
+      </div>
+
+      <!-- 🔍 BÚSQUEDA API OPEN LIBRARY -->
+      <div class="api-section">
+        <h3>🌐 Buscar en Open Library API</h3>
+        <div class="search-row">
+          <input v-model="busquedaApi" placeholder="Ej: Harry Potter, Dune, Berserk…"
+            @keyup.enter="buscarApi"/>
+          <button class="btn btn-primary" @click.prevent="buscarApi" :disabled="cargandoApi">
+            {{ cargandoApi ? '…' : 'Buscar' }}
+          </button>
+        </div>
+        <div v-if="cargandoApi" class="api-loading">Consultando API…</div>
+        <div v-if="resultadosApi.length" class="api-results">
+          <div v-for="libro in resultadosApi" :key="libro.titulo" class="api-book">
+            <img v-if="libro.portada" :src="libro.portada" style="width:100%;border-radius:4px;margin-bottom:0.4rem"/>
+            <div class="api-book-title">{{ libro.titulo }}</div>
+            <div class="api-book-author">{{ libro.autor }}</div>
+            <div style="font-size:0.7rem;color:var(--accent3);font-family:var(--font-mono)">{{ libro.categoria }}</div>
+            <button class="btn-import" @click="importar(libro)">+ Importar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📝 FORMULARIO — Lecciones 3 y 4 -->
+      <div class="form-card">
+        <h3>📝 Añadir libro manualmente</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Título *</label>
+            <input v-model.trim="nuevoLibro.titulo" placeholder="El nombre del viento" @keyup.enter.once="agregar"/>
+          </div>
+          <div class="form-group">
+            <label>Autor *</label>
+            <input v-model.trim="nuevoLibro.autor" placeholder="Patrick Rothfuss"/>
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select v-model="nuevoLibro.categoria">
+              <option v-for="cat in CATEGORIAS" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Año</label>
+            <input v-model="nuevoLibro.año" placeholder="2023" type="number" min="1000" max="2099"/>
+          </div>
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea v-model="nuevoLibro.descripcion" placeholder="Añade una reseña corta…"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" @click.prevent="agregar">+ Agregar</button>
+          <div class="preview-inline">
+            Vista previa: <span>{{ previsualizacion }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS — Lección 2 -->
+      <div class="filter-bar">
+        <button v-for="f in filtrosDisponibles" :key="f"
+          class="filter-chip" :class="{ active: filtroActivo === f }"
+          @click="filtroActivo = f">
+          {{ f }}
+        </button>
+      </div>
+
+      <!-- LISTA REACTIVA — Lección 2 -->
+      <div v-if="librosFiltrados.length === 0" class="empty-state">
+        <div class="big">📭</div>
+        <p v-if="libros.length === 0">Tu biblioteca está vacía. ¡Añade tu primer libro!</p>
+        <p v-else>No hay libros en esta categoría.</p>
+        <router-link to="/libros" class="btn btn-outline">Ver todos</router-link>
+      </div>
+      <transition-group v-else name="list" tag="div" class="books-grid">
+        <libro-card v-for="libro in librosFiltrados" :key="libro.id"
+          :libro="libro" @eliminar="$emit('eliminar', $event)"/>
+      </transition-group>
+    </div>
+  `
+};
+
+
+// VISTA: DETALLE DEL LIBRO
+
+const DetalleLibro = {
+  name: 'DetalleLibro',
+  props: ['libros'],
+  data() { return { imgError: false }; },
+  computed: {
+    libro() {
+      return this.libros.find(l => String(l.id) === String(this.$route.params.id));
+    },
+    emoji() { return CAT_EMOJI[this.libro?.categoria] || '📚'; },
+    coverColor() { return CAT_COLORS[this.libro?.categoria] || '#333'; }
+  },
+  template: `
+    <div class="view">
+      <router-link to="/libros" class="back-btn">← Volver a la biblioteca</router-link>
+
+      <div v-if="!libro" style="text-align:center;padding:4rem;color:var(--muted)">
+        <div style="font-size:3rem">🔍</div>
+        <p>Libro no encontrado.</p>
+        <router-link to="/libros" class="btn btn-outline" style="margin-top:1rem;display:inline-flex">Explorar Biblioteca</router-link>
+      </div>
+
+      <div v-else class="detail-grid">
+        <div>
+          <div class="detail-cover" :style="{ background: coverColor + '22', borderColor: coverColor + '44' }">
+            <img v-if="libro.portada && !imgError" :src="libro.portada" :alt="libro.titulo" @error="imgError = true"/>
+            <span v-else style="font-size:5rem">{{ emoji }}</span>
+          </div>
+        </div>
+        <div>
+          <div class="detail-badge">{{ libro.categoria }}</div>
+          <h1 class="detail-title">{{ libro.titulo }}</h1>
+          <p class="detail-author">por {{ libro.autor }}</p>
+          <p v-if="libro.descripcion" class="detail-desc">{{ libro.descripcion }}</p>
+          <p v-else class="detail-desc" style="font-style:italic">Sin descripción disponible. Importa libros desde la API para ver descripciones y portadas automáticas.</p>
+
+          <div class="detail-meta-grid" style="margin-bottom:1.5rem">
+            <div class="detail-meta-item">
+              <div class="key">Año</div>
+              <div class="val">{{ libro.año || '—' }}</div>
+            </div>
+            <div class="detail-meta-item">
+              <div class="key">Género</div>
+              <div class="val">{{ libro.categoria }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <router-link to="/libros" class="btn btn-outline">← Volver</router-link>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+// ROUTER 
+
+const router = VueRouter.createRouter({
+  history: VueRouter.createWebHashHistory(),
+  routes: [
+    { path: '/', component: InicioView },
+    { path: '/libros', component: ListaLibros },
+    { path: '/libros/:id', component: DetalleLibro, props: true },
+  ]
+});
+
+// ══════════════════════════════════════════
+// APP ROOT — estado global compartido
+// ══════════════════════════════════════════
+const App = {
+  data() {
+    return {
+      usuario: 'Lector',
+      contador: 0,
+      libros: [
+        { id: 1, titulo: 'Dune', autor: 'Frank Herbert', categoria: 'Ciencia Ficción', descripcion: 'Una epopeya épica en un planeta desértico donde la política y la profecía colisionan.', año: 1965, portada: null },
+        { id: 2, titulo: 'El nombre del viento', autor: 'Patrick Rothfuss', categoria: 'Fantasía', descripcion: 'La historia del legendario mago Kvothe narrada en primera persona.', año: 2007, portada: null },
+        { id: 3, titulo: 'Berserk Vol. 1', autor: 'Kentaro Miura', categoria: 'Manga', descripcion: 'Un guerrero oscuro en un mundo de fantasía brutal y oscura.', año: 1989, portada: null },
+      ],
+      nextId: 4,
+    };
+  },
+  methods: {
+    agregarLibro(datos) {
+      this.libros.push({
+        id: this.nextId++,
+        titulo: datos.titulo,
+        autor: datos.autor,
+        categoria: datos.categoria || 'Aventura',
+        descripcion: datos.descripcion || '',
+        año: datos.año || '',
+        portada: datos.portada || null,
+      });
+    },
+    eliminarLibro(id) {
+      this.libros = this.libros.filter(l => l.id !== id);
+    }
+  },
+  template: `
+    <nav>
+      <router-link to="/" class="nav-brand">BOOK<span>LIST</span></router-link>
+      <div class="nav-links">
+        <router-link to="/">Inicio</router-link>
+        <router-link to="/libros">
+          Biblioteca
+          <span class="nav-count">{{ libros.length }}</span>
+        </router-link>
+      </div>
+    </nav>
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component"
+          :libros="libros"
+          :usuario="usuario"
+          :contador="contador"
+          @agregar="agregarLibro"
+          @eliminar="eliminarLibro"
+          @incrementar="contador++"
+          @decrementar="contador > 0 && contador--"
+        />
+      </transition>
+    </router-view>
+  `
+};
+
+Vue.createApp(App).use(router).mount('#app');
+</script>
 </body>
 </html>
